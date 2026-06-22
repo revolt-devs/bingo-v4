@@ -86551,6 +86551,16 @@
   },
   "awards": [
     {
+      "id": "bingo-mvp",
+      "label": "Bingo MVP",
+      "criteria": "most tile contributions",
+      "winner": "Gape tortas",
+      "winnerPlayerId": "gape-tortas",
+      "value": "9.1 tile shares",
+      "description": "The \"Bingo MVP\" award (most tile contributions) goes to Gape tortas with 9.1 tile shares.",
+      "icon": "🥇"
+    },
+    {
       "id": "most-unemployed",
       "label": "Most Unemployed",
       "criteria": "most EHB+EHP",
