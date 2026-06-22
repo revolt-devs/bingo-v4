@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Iron Revolt Bingo V4 - Wrapped</title>
+    <script>
+      (function () {
+        var marker = "/wrapped";
+        var path = window.location.pathname;
+        var markerIndex = path.indexOf(marker);
+
+        if (markerIndex === -1) {
+          window.location.replace("./");
+          return;
+        }
+
+        var appBase = path.slice(0, markerIndex + marker.length);
+        var appPath = path.slice(markerIndex + marker.length) || "/";
+        var redirectPath = appPath + window.location.search + window.location.hash;
+
+        window.location.replace(appBase + "/?redirect=" + encodeURIComponent(redirectPath));
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Opening Iron Revolt Bingo V4 - Wrapped...</p>
+  </body>
+</html>

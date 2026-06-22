@@ -813,6 +813,15 @@ function normalizePath() {
   return path.length > 1 ? path.replace(/\/$/, "") : path;
 }
 
+function restoreGitHubPagesRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const redirectPath = params.get("redirect");
+  if (!redirectPath || !redirectPath.startsWith("/")) return;
+
+  const redirectUrl = new URL(redirectPath, window.location.origin);
+  history.replaceState({}, "", `${withBasePath(redirectUrl.pathname)}${redirectUrl.search}${redirectUrl.hash}`);
+}
+
 function routeForView(viewName) {
   return withBasePath(viewRoutes[viewName] || "/");
 }
@@ -911,6 +920,7 @@ function renderAll() {
   renderBosses();
   bindTabs();
   bindDelegatedActions();
+  restoreGitHubPagesRedirect();
   routeToState();
 }
 
