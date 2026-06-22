@@ -1,5 +1,5 @@
 import * as components from "./components.js";
-import { detailFormat, escapeHtml, format, numberFormat, slugify } from "./utils.js";
+import { detailFormat, escapeHtml, format, numberFormat, shortDateTime, slugify } from "./utils.js";
 
 const appBaseUrl = new URL(".", import.meta.url);
 const appBasePath = appBaseUrl.pathname.replace(/\/$/, "");
@@ -120,6 +120,21 @@ function formatHours(value) {
 
 function renderBadge(label) {
   return `<span class="award-badge">${escapeHtml(label)}</span>`;
+}
+
+function renderDataFreshness() {
+  const target = qs("#data-freshness");
+  if (!target) return;
+
+  const generatedAt = state.data?.generatedAt;
+  if (!generatedAt) {
+    target.textContent = "";
+    target.removeAttribute("title");
+    return;
+  }
+
+  target.textContent = `Last updated ${shortDateTime(generatedAt)}`;
+  target.title = generatedAt;
 }
 
 function renderScoreCard(team) {
@@ -1218,6 +1233,7 @@ function bindTabs() {
 }
 
 function renderAll() {
+  renderDataFreshness();
   renderOverview();
   renderTeams();
   renderPlayers();
