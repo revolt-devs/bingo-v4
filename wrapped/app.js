@@ -448,10 +448,15 @@ function renderPlayers() {
   `;
 }
 
+function tileTeamCompletionProgress(tile) {
+  const completedTeams = (tile.teamScores || []).filter((row) => (row.score || 0) >= 1).length;
+  return `${Math.min(completedTeams, 4)}/4`;
+}
+
 function renderBoard() {
   qs("#tile-board").innerHTML = state.data.tiles
     .map((tile) => {
-      const progress = `${format(tile.total, 2)}/${format(tile.needed, 0)}`;
+      const progress = tileTeamCompletionProgress(tile);
       return `
         <button class="tile-card ${tile.isComplete ? "is-complete" : "is-open"}" type="button" data-board-tile-id="${escapeHtml(tile.id)}">
           <img src="${escapeHtml(tile.imageUrl)}" alt="" loading="lazy" />
@@ -736,7 +741,7 @@ function renderBossRelatedTiles(boss) {
               <img src="${escapeHtml(tile.imageUrl)}" alt="" loading="lazy" />
               <span>
                 <strong>${escapeHtml(tile.pointLabel || tile.label)}</strong>
-                <small>Tile ${tile.position} - ${format(tile.total, 2)}/${format(tile.needed, 0)}</small>
+                <small>Tile ${tile.position} - ${tileTeamCompletionProgress(tile)}</small>
               </span>
             </button>
           `
