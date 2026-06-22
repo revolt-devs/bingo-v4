@@ -12,6 +12,7 @@
         <nav class="view-tabs" aria-label="Views">
           <button class="tab is-active" type="button" data-view="overview">Overview</button>
           <button class="tab" type="button" data-view="teams">Teams</button>
+          <button class="tab" type="button" data-view="players">Players</button>
           <button class="tab" type="button" data-view="board">Board</button>
           <button class="tab" type="button" data-view="bosses">Bosses</button>
           <button class="tab" type="button" data-view="data">Data</button>
@@ -31,6 +32,16 @@
             </div>
           </div>
           <div id="teams-content"></div>
+        </section>
+
+        <section class="view" id="players-view" aria-labelledby="players-title">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">All rosters combined</p>
+              <h2 id="players-title">Players</h2>
+            </div>
+          </div>
+          <div id="players-content"></div>
         </section>
 
         <section class="view" id="player-page-view" aria-label="Player detail">
@@ -86,6 +97,7 @@
       <nav class="bottom-nav" aria-label="Mobile views">
         <button class="tab is-active" type="button" data-view="overview">Overview</button>
         <button class="tab" type="button" data-view="teams">Teams</button>
+        <button class="tab" type="button" data-view="players">Players</button>
         <button class="tab" type="button" data-view="board">Board</button>
         <button class="tab" type="button" data-view="bosses">Bosses</button>
         <button class="tab" type="button" data-view="data">Data</button>
@@ -93,5 +105,16 @@
     </div>
 
     <script type="module" src="./app.js"></script>
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var redirectPath = params.get("redirect");
+        if (!redirectPath || redirectPath.charAt(0) !== "/") return;
+
+        var redirectUrl = new URL(redirectPath, window.location.origin);
+        var appBase = window.location.pathname.replace(/\/(?:index\.html)?$/, "");
+        window.history.replaceState({}, "", appBase + redirectUrl.pathname + redirectUrl.search + redirectUrl.hash);
+      })();
+    </script>
   </body>
 </html>

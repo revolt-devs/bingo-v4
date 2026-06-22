@@ -55,6 +55,8 @@ Phase 1 should focus on resource-style stat pages:
 - `/`
 - `/teams`
 - `/teams/:teamId`
+- `/players`
+- `/players/:playerId`
 - `/participants`
 - `/participants/:participantId`
 - `/bosses`

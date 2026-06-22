@@ -11,6 +11,7 @@ const paths = {
 const viewRoutes = {
   overview: "/",
   teams: "/teams",
+  players: "/players",
   board: "/board",
   bosses: "/bosses",
   data: "/source"
@@ -31,7 +32,9 @@ const state = {
   selectedPlayerId: null,
   selectedBossSlug: null,
   collapsedTeamIds: new Set(),
-  teamRosterSorts: new Map()
+  teamRosterSorts: new Map(),
+  playersSortKey: defaultTeamRosterSort,
+  expandedTileKcIds: new Set()
 };
 
 async function loadJson(path) {
@@ -171,6 +174,10 @@ function renderOverview() {
           <span class="eyebrow">Explore</span>
           <strong>Teams</strong>
         </a>
+        <a class="nav-card" href="${routeForView("players")}" data-view-jump="players">
+          <span class="eyebrow">Explore</span>
+          <strong>Players</strong>
+        </a>
         <a class="nav-card" href="${routeForView("bosses")}" data-view-jump="bosses">
           <span class="eyebrow">Explore</span>
           <strong>Bosses</strong>
@@ -295,6 +302,95 @@ function renderTeams() {
         .map(renderTeamPanel)
         .join("")}
     </div>
+  `;
+}
+
+function playersSortHeader(column, { activeSortKey }) {
+  const isActive = column.sortKey === activeSortKey;
+
+  return `
+    <button
+      class="sort-header ${isActive ? "is-active" : ""}"
+      type="button"
+      data-players-sort="${escapeHtml(column.sortKey)}"
+      aria-label="Sort players by ${escapeHtml(column.label)} descending"
+      aria-pressed="${isActive ? "true" : "false"}"
+    >
+      <span>${escapeHtml(column.label)}</span>
+      <span aria-hidden="true">v</span>
+    </button>
+  `;
+}
+
+function renderPlayersMetrics(players) {
+  const totals = players.reduce(
+    (memo, player) => ({
+      ehb: memo.ehb + (player.ehb || 0),
+      ehp: memo.ehp + (player.ehp || 0),
+      totalTime: memo.totalTime + (player.totalTime || 0),
+      tileScore: memo.tileScore + (player.tileScore || 0)
+    }),
+    { ehb: 0, ehp: 0, totalTime: 0, tileScore: 0 }
+  );
+
+  return `
+    <div class="resource-stats">
+      ${components.miniStat({ label: "Players", value: format(players.length, 0) })}
+      ${components.miniStat({ label: "EHB", value: formatHours(totals.ehb) })}
+      ${components.miniStat({ label: "EHP", value: formatHours(totals.ehp) })}
+      ${components.miniStat({ label: "Total Player Time", value: formatHours(totals.totalTime) })}
+      ${components.miniStat({ label: "Tile Score", value: format(totals.tileScore, 2) })}
+    </div>
+  `;
+}
+
+function renderPlayersTable() {
+  const activeSortKey = state.playersSortKey || defaultTeamRosterSort;
+  const rows = state.data.players
+    .map((player) => ({
+      ...player,
+      teamSortName: player.teamName || player.teamShortName || "Unknown"
+    }))
+    .sort((a, b) => compareDescending(a[activeSortKey], b[activeSortKey]) || a.displayName.localeCompare(b.displayName));
+
+  return components.table(
+    [
+      {
+        label: "Player",
+        sortKey: "displayName",
+        header: playersSortHeader,
+        render: (player) => `
+          <button class="link-button" type="button" data-player-id="${escapeHtml(player.id)}">
+            <strong>${escapeHtml(player.displayName)}</strong>
+          </button>
+          <span class="badge-row">
+            ${(player.badges || []).map(renderBadge).join("")}
+          </span>
+        `
+      },
+      { label: "Team", sortKey: "teamSortName", header: playersSortHeader, render: (player) => teamBadge(player) },
+      { label: "Tile Score", sortKey: "tileScore", header: playersSortHeader, render: (player) => format(player.tileScore, 2) },
+      { label: "EHP", sortKey: "ehp", header: playersSortHeader, render: (player) => formatHours(player.ehp) },
+      { label: "EHB", sortKey: "ehb", header: playersSortHeader, render: (player) => formatHours(player.ehb) },
+      { label: "Total", sortKey: "totalTime", header: playersSortHeader, render: (player) => formatHours(player.totalTime) },
+      { label: "Unique tiles contributed to", sortKey: "tileCount", header: playersSortHeader, render: (player) => format(player.tileCount, 0) }
+    ],
+    rows,
+    "roster-table players-table",
+    { activeSortKey }
+  );
+}
+
+function renderPlayers() {
+  const players = state.data.players;
+
+  qs("#players-content").innerHTML = `
+    <article class="glass-panel players-panel">
+      <div class="team-panel-body">
+        ${renderPlayersMetrics(players)}
+        ${renderPlayersTable()}
+      </div>
+    </article>
   `;
 }
 
@@ -440,6 +536,7 @@ function renderTileContributors(tile) {
 function playerBossRowsForTile(tile) {
   const relevant = new Set(tile.relevantCategories || []);
   if (!relevant.size) return [];
+
   return state.data.players
     .flatMap((player) =>
       player.bossRows
@@ -453,24 +550,38 @@ function playerBossRowsForTile(tile) {
           teamColor: player.teamColor
         }))
     )
-    .sort((a, b) => b.ehb - a.ehb || b.kills - a.kills || a.displayName.localeCompare(b.displayName))
-    .slice(0, 10);
+    .sort((a, b) => b.ehb - a.ehb || b.kills - a.kills || a.displayName.localeCompare(b.displayName));
 }
 
 function renderTileRelevantRows(tile) {
-  const rows = playerBossRowsForTile(tile);
+  const allRows = playerBossRowsForTile(tile);
+  const isExpanded = state.expandedTileKcIds.has(tile.id);
+  const rows = isExpanded ? allRows : allRows.slice(0, 10);
   if (!rows.length) return `<div class="empty-state">No relevant boss rows for this tile.</div>`;
 
-  return components.table(
-    [
-      { label: "Player", render: (row) => `<strong>${escapeHtml(row.displayName)}</strong> ${teamBadge(row)}` },
-      { label: "Boss", render: (row) => escapeHtml(row.boss) },
-      { label: "KC", render: (row) => format(row.kills, 0) },
-      { label: "EHB", render: (row) => formatHours(row.ehb) }
-    ],
-    rows,
-    "compact-table"
-  );
+  return `
+    ${components.table(
+      [
+        { label: "Player", render: (row) => `<strong>${escapeHtml(row.displayName)}</strong> ${teamBadge(row)}` },
+        { label: "Boss", render: (row) => escapeHtml(row.boss) },
+        { label: "KC", render: (row) => format(row.kills, 0) },
+        { label: "EHB", render: (row) => formatHours(row.ehb) }
+      ],
+      rows,
+      "compact-table"
+    )}
+    ${
+      allRows.length > 10
+        ? `
+          <div class="table-action-row">
+            <button class="secondary-action inline-action" type="button" data-toggle-tile-kc="${escapeHtml(tile.id)}">
+              ${isExpanded ? "Show top 10" : `Show all ${format(allRows.length, 0)}`}
+            </button>
+          </div>
+        `
+        : ""
+    }
+  `;
 }
 
 function buildTileDetail(tileId) {
@@ -791,6 +902,25 @@ function bindDelegatedActions() {
       return;
     }
 
+    const playersSortButton = event.target.closest("[data-players-sort]");
+    if (playersSortButton) {
+      state.playersSortKey = playersSortButton.dataset.playersSort;
+      renderPlayers();
+      return;
+    }
+
+    const tileKcToggle = event.target.closest("[data-toggle-tile-kc]");
+    if (tileKcToggle) {
+      const tileId = tileKcToggle.dataset.toggleTileKc;
+      if (state.expandedTileKcIds.has(tileId)) {
+        state.expandedTileKcIds.delete(tileId);
+      } else {
+        state.expandedTileKcIds.add(tileId);
+      }
+      renderTilePage();
+      return;
+    }
+
     const bossButton = event.target.closest("[data-boss-slug]");
     if (bossButton) {
       navigateToBoss(bossButton.dataset.bossSlug);
@@ -899,7 +1029,7 @@ function activateView(viewName, options = {}) {
   }
 
   const activeTabView =
-    viewName === "tile-page" ? "board" : viewName === "player-page" ? "teams" : viewName === "boss-page" ? "bosses" : viewName;
+    viewName === "tile-page" ? "board" : viewName === "player-page" ? "players" : viewName === "boss-page" ? "bosses" : viewName;
   qsa("[data-view]").forEach((tab) => tab.classList.toggle("is-active", tab.dataset.view === activeTabView));
   qsa(".view").forEach((view) => view.classList.remove("is-active"));
   qs(`#${viewName}-view`)?.classList.add("is-active");
@@ -916,6 +1046,7 @@ function bindTabs() {
 function renderAll() {
   renderOverview();
   renderTeams();
+  renderPlayers();
   renderBoard();
   renderBosses();
   bindTabs();

@@ -148,7 +148,7 @@ h3 {
 
 .view-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -710,6 +710,12 @@ table {
   min-width: 540px;
 }
 
+.table-action-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 14px 0;
+}
+
 th,
 td {
   border-bottom: 1px solid rgba(255, 255, 255, 0.085);
@@ -866,7 +872,7 @@ tbody tr:hover {
   bottom: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   margin-top: 18px;
   padding: 10px;
@@ -992,12 +998,17 @@ tbody tr:hover {
   font-weight: 800;
 }
 
-.award-placeholder-grid,
-.action-grid {
+.award-placeholder-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
   padding: 14px;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 
 .award-placeholder {
@@ -1484,11 +1495,17 @@ tbody tr:hover {
 
   .view-tabs {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .tab {
-    min-width: 116px;
+    min-width: 96px;
     padding-inline: 14px;
+  }
+
+  .bottom-nav {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .kpi-grid {
@@ -1499,9 +1516,12 @@ tbody tr:hover {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .award-placeholder-grid,
-  .action-grid {
+  .award-placeholder-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .action-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .board {
