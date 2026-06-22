@@ -14,6 +14,11 @@
 !/wrapped/
 !/wrapped/**
 
+# Safe local dev server documented in README
+!/scripts/
+/scripts/*
+!/scripts/serve-static.mjs
+
 # Public generated data used by wrapped/app.js
 !/data/
 /data/*
