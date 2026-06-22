@@ -1544,6 +1544,91 @@ tbody tr:hover {
   line-height: 1;
 }
 
+.player-tile-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+  gap: 8px;
+  max-width: 760px;
+  margin-top: 14px;
+}
+
+.player-tile-chip {
+  position: relative;
+  display: grid;
+  align-content: end;
+  min-height: 84px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--team-color), transparent 42%);
+  border-radius: 8px;
+  background:
+    linear-gradient(to bottom, rgba(7, 7, 13, 0.08), rgba(7, 7, 13, 0.92)),
+    rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  cursor: pointer;
+  padding: 7px;
+  text-align: left;
+}
+
+.player-tile-chip img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.42;
+  transition: opacity 0.16s ease;
+}
+
+.player-tile-chip:hover {
+  border-color: color-mix(in srgb, var(--team-color), var(--cyan) 34%);
+  transform: translateY(-1px);
+}
+
+.player-tile-chip:hover img {
+  opacity: 0.58;
+}
+
+.player-tile-percent,
+.player-tile-label,
+.player-tile-meta {
+  position: relative;
+  z-index: 1;
+}
+
+.player-tile-percent {
+  justify-self: start;
+  min-height: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(7, 7, 13, 0.74);
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 950;
+  padding: 3px 7px;
+}
+
+.player-tile-label {
+  display: block;
+  overflow: hidden;
+  margin-top: 16px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-tile-meta {
+  display: block;
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--secondary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (min-width: 700px) {
   :root {
     --app-bottom-space: 104px;
@@ -1608,6 +1693,10 @@ tbody tr:hover {
 
   .tile-leader-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .player-tile-strip {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   }
 
   .boss-index-grid {

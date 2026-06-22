@@ -44,8 +44,17 @@ function resolveRequestPath(urlPath) {
 }
 
 const server = createServer((request, response) => {
-  if ((request.url || "/").split("?")[0] === "/") {
+  const requestPath = (request.url || "/").split("?")[0];
+
+  if (requestPath === "/") {
     response.writeHead(302, { Location: "/wrapped/" });
+    response.end();
+    return;
+  }
+
+  if (requestPath === "/wrapped") {
+    const query = (request.url || "").includes("?") ? `?${(request.url || "").split("?").slice(1).join("?")}` : "";
+    response.writeHead(302, { Location: `/wrapped/${query}` });
     response.end();
     return;
   }

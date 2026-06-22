@@ -34,6 +34,7 @@ const state = {
   collapsedTeamIds: new Set(),
   teamRosterSorts: new Map(),
   playersSortKey: defaultTeamRosterSort,
+  playerBossSorts: new Map(),
   expandedTileKcIds: new Set()
 };
 
@@ -238,6 +239,14 @@ function compareDescending(aValue, bValue) {
   }
 
   return (bValue || 0) - (aValue || 0);
+}
+
+function compareAscending(aValue, bValue) {
+  if (typeof aValue === "string" || typeof bValue === "string") {
+    return String(aValue || "").localeCompare(String(bValue || ""));
+  }
+
+  return (aValue || 0) - (bValue || 0);
 }
 
 function rosterSortHeader(column, { team, activeSortKey }) {
@@ -472,28 +481,68 @@ function tiedMaxRows(rows, valueKey) {
     .sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
 
-function tileTimeLeaderRows(tile) {
-  const relevant = new Set(tile.relevantCategories || []);
-  if (!relevant.size) return [];
+function tileRelevantSlugs(tile) {
+  return new Set((tile.relevantCategories || []).filter(isMappedCategory).map(slugify));
+}
 
+function rowMatchesRelevant(row, relevantSlugs, keys) {
+  return keys.some((key) => relevantSlugs.has(slugify(row[key])));
+}
+
+function playerRelevantRowsForTile(player, tile) {
+  const relevantSlugs = tileRelevantSlugs(tile);
+  if (!relevantSlugs.size) return [];
+
+  const bossRows = player.bossRows
+    .filter((row) => (row.ehb > 0 || row.kills > 0) && rowMatchesRelevant(row, relevantSlugs, ["category", "boss"]))
+    .map((row) => ({
+      type: "boss",
+      source: row.boss,
+      category: row.category,
+      gained: row.kills || 0,
+      gainedLabel: "KC",
+      time: row.ehb || 0,
+      timeLabel: "EHB"
+    }));
+
+  const activityRows = player.activityRows
+    .filter(
+      (row) =>
+        row.activity &&
+        row.activity !== "Overall" &&
+        (row.exp > 0 || row.ehp > 0) &&
+        rowMatchesRelevant(row, relevantSlugs, ["category", "activity"])
+    )
+    .map((row) => ({
+      type: "activity",
+      source: row.activity,
+      category: row.category,
+      gained: row.exp || 0,
+      gainedLabel: "XP",
+      time: row.ehp || 0,
+      timeLabel: "EHP"
+    }));
+
+  return [...bossRows, ...activityRows];
+}
+
+function tileTimeLeaderRows(tile) {
   const rowsByPlayer = new Map();
   state.data.players.forEach((player) => {
-    player.bossRows
-      .filter((row) => relevant.has(row.category) && (row.ehb > 0 || row.kills > 0))
-      .forEach((row) => {
-        const existing = rowsByPlayer.get(player.id) || {
-          playerId: player.id,
-          displayName: player.displayName,
-          teamShortName: player.teamShortName,
-          teamName: player.teamName,
-          teamColor: player.teamColor,
-          time: 0,
-          kills: 0
-        };
-        existing.time += row.ehb || 0;
-        existing.kills += row.kills || 0;
-        rowsByPlayer.set(player.id, existing);
-      });
+    playerRelevantRowsForTile(player, tile).forEach((row) => {
+      const existing = rowsByPlayer.get(player.id) || {
+        playerId: player.id,
+        displayName: player.displayName,
+        teamShortName: player.teamShortName,
+        teamName: player.teamName,
+        teamColor: player.teamColor,
+        time: 0,
+        kills: 0
+      };
+      existing.time += row.time || 0;
+      existing.kills += row.gained || 0;
+      rowsByPlayer.set(player.id, existing);
+    });
   });
 
   return tiedMaxRows([...rowsByPlayer.values()], "time");
@@ -531,7 +580,7 @@ function renderTileLeaders(tile) {
       <section class="tile-leader-card">
         <span>Most time</span>
         ${timeLeaders.length ? renderLeaderButtons(timeLeaders) : `<p>No mapped time yet.</p>`}
-        <small>${timeLeaders.length ? `${formatHours(timeLeaders[0].time)} across ${escapeHtml((tile.relevantCategories || []).join(", "))}` : "KC data is unmapped for this tile."}</small>
+        <small>${timeLeaders.length ? `${formatHours(timeLeaders[0].time)} across ${escapeHtml((tile.relevantCategories || []).join(", "))}` : "No mapped time for this tile."}</small>
       </section>
       <section class="tile-leader-card">
         <span>Most tile share</span>
@@ -563,39 +612,37 @@ function renderTileContributors(tile) {
   );
 }
 
-function playerBossRowsForTile(tile) {
-  const relevant = new Set(tile.relevantCategories || []);
-  if (!relevant.size) return [];
-
+function playerRelevantRowsForTilePage(tile) {
   return state.data.players
     .flatMap((player) =>
-      player.bossRows
-        .filter((row) => relevant.has(row.category) && (row.ehb > 0 || row.kills > 0))
-        .map((row) => ({
-          ...row,
-          playerId: player.id,
-          displayName: player.displayName,
-          teamShortName: player.teamShortName,
-          teamName: player.teamName,
-          teamColor: player.teamColor
-        }))
+      playerRelevantRowsForTile(player, tile).map((row) => ({
+        ...row,
+        playerId: player.id,
+        displayName: player.displayName,
+        teamShortName: player.teamShortName,
+        teamName: player.teamName,
+        teamColor: player.teamColor
+      }))
     )
-    .sort((a, b) => b.ehb - a.ehb || b.kills - a.kills || a.displayName.localeCompare(b.displayName));
+    .sort((a, b) => b.time - a.time || b.gained - a.gained || a.displayName.localeCompare(b.displayName));
 }
 
 function renderTileRelevantRows(tile) {
-  const allRows = playerBossRowsForTile(tile);
+  const allRows = playerRelevantRowsForTilePage(tile);
   const isExpanded = state.expandedTileKcIds.has(tile.id);
   const rows = isExpanded ? allRows : allRows.slice(0, 10);
-  if (!rows.length) return `<div class="empty-state">No relevant boss rows for this tile.</div>`;
+  if (!rows.length) return `<div class="empty-state">No relevant rows for this tile.</div>`;
 
   return `
     ${components.table(
       [
         { label: "Player", render: (row) => `<strong>${escapeHtml(row.displayName)}</strong> ${teamBadge(row)}` },
-        { label: "Boss", render: (row) => escapeHtml(row.boss) },
-        { label: "KC", render: (row) => format(row.kills, 0) },
-        { label: "EHB", render: (row) => formatHours(row.ehb) }
+        {
+          label: "Source",
+          render: (row) => `<strong>${escapeHtml(row.source)}</strong><span class="table-subline">${escapeHtml(row.category)}</span>`
+        },
+        { label: "Gained", render: (row) => `${format(row.gained, 0)} ${escapeHtml(row.gainedLabel)}` },
+        { label: "Time", render: (row) => `${formatHours(row.time)} ${escapeHtml(row.timeLabel)}` }
       ],
       rows,
       "compact-table"
@@ -642,7 +689,7 @@ function buildTileDetail(tileId) {
             ${renderTileContributors(tile)}
             <section class="split-boss-section">
               <header class="mini-section-header">
-                <h4>KC</h4>
+                <h4>Relevant gains</h4>
                 <span class="metric-chip">${escapeHtml((tile.relevantCategories || []).join(" / ") || "unmapped")}</span>
               </header>
               ${renderTileRelevantRows(tile)}
@@ -804,6 +851,88 @@ function imageForBossCategory(category) {
   return state.data.tiles.find((tile) => (tile.relevantCategories || []).includes(category))?.imageUrl || "";
 }
 
+function playerTileAttributionRows(player) {
+  return (player.tileContributions || [])
+    .map((contribution) => {
+      const tile = tileById(contribution.tileId);
+      const contributors = tile?.contributors || [];
+      const teamContributors = contributors.filter(
+        (row) =>
+          (player.teamId && row.teamId === player.teamId) ||
+          (player.teamName && row.teamName === player.teamName) ||
+          (player.teamShortName && row.teamShortName === player.teamShortName)
+      );
+      const teamTotal = teamContributors.reduce((sum, row) => sum + (row.amount || 0), 0);
+      const total = teamTotal || contributors.reduce((sum, row) => sum + (row.amount || 0), 0);
+      return {
+        ...contribution,
+        tile,
+        total,
+        share: total > 0 ? (contribution.amount || 0) / total : 0
+      };
+    })
+    .sort((a, b) => b.share - a.share || b.amount - a.amount || (a.pointLabel || a.label).localeCompare(b.pointLabel || b.label));
+}
+
+function renderPlayerTileAttributionTiles(player) {
+  const rows = playerTileAttributionRows(player);
+  if (!rows.length) return "";
+
+  return `
+    <section class="player-tile-strip" aria-label="Tile attributions">
+      ${rows
+        .map((row) => {
+          const tile = row.tile;
+          const label = row.pointLabel || row.label || tile?.pointLabel || tile?.label || "Tile";
+          const tileNumber = tile ? `Tile ${format(tile.position, 0)}` : "Tile";
+          const content = `
+            ${tile?.imageUrl ? `<img src="${escapeHtml(tile.imageUrl)}" alt="" loading="lazy" />` : ""}
+            <span class="player-tile-percent">${format(row.share * 100, 1)}%</span>
+            <span class="player-tile-label">${escapeHtml(label)}</span>
+            <span class="player-tile-meta">${escapeHtml(tileNumber)}</span>
+          `;
+
+          return tile
+            ? `<button class="player-tile-chip" type="button" data-board-tile-id="${escapeHtml(tile.id)}">${content}</button>`
+            : `<span class="player-tile-chip">${content}</span>`;
+        })
+        .join("")}
+    </section>
+  `;
+}
+
+function playerBossSortKey(playerId) {
+  return state.playerBossSorts.get(playerId) || "kills";
+}
+
+function playerBossSortHeader(column, { player, activeSortKey }) {
+  const isActive = column.sortKey === activeSortKey;
+
+  return `
+    <button
+      class="sort-header ${isActive ? "is-active" : ""}"
+      type="button"
+      data-player-boss-sort="${escapeHtml(player.id)}"
+      data-sort-key="${escapeHtml(column.sortKey)}"
+      aria-label="Sort ${escapeHtml(player.displayName)} boss rows by ${escapeHtml(column.label)}"
+      aria-pressed="${isActive ? "true" : "false"}"
+    >
+      <span>${escapeHtml(column.label)}</span>
+      <span aria-hidden="true">v</span>
+    </button>
+  `;
+}
+
+function sortedPlayerBossRows(player) {
+  const activeSortKey = playerBossSortKey(player.id);
+  const rows = player.bossRows.filter((row) => (row.kills || 0) > 0 || (row.ehb || 0) > 0);
+
+  return rows.sort((a, b) => {
+    if (activeSortKey === "boss") return compareAscending(a.boss, b.boss);
+    return compareDescending(a[activeSortKey], b[activeSortKey]) || compareAscending(a.boss, b.boss);
+  });
+}
+
 function renderPlayerHeader(player) {
   const topBoss = topBossForPlayer(player);
   const topBossImage = topBoss ? imageForBossCategory(topBoss.category) : "";
@@ -837,31 +966,39 @@ function renderPlayerHeader(player) {
             `
             : ""
         }
+        ${renderPlayerTileAttributionTiles(player)}
       </div>
     </article>
   `;
 }
 
 function renderPlayerBossTable(player) {
+  const activeSortKey = playerBossSortKey(player.id);
+
   return components.table(
     [
-      { label: "Boss", render: (row) => `<strong>${escapeHtml(row.boss)}</strong><span class="table-subline">${escapeHtml(row.category)}</span>` },
-      { label: "KC", render: (row) => format(row.kills, 0) },
-      { label: "Rank", render: (row) => format(row.rank, 0) },
-      { label: "EHB", render: (row) => formatHours(row.ehb) }
+      {
+        label: "Boss",
+        sortKey: "boss",
+        header: playerBossSortHeader,
+        render: (row) => `<strong>${escapeHtml(row.boss)}</strong><span class="table-subline">${escapeHtml(row.category)}</span>`
+      },
+      { label: "KC", sortKey: "kills", header: playerBossSortHeader, render: (row) => format(row.kills, 0) },
+      { label: "EHB", sortKey: "ehb", header: playerBossSortHeader, render: (row) => formatHours(row.ehb) }
     ],
-    player.bossRows
+    sortedPlayerBossRows(player),
+    "",
+    { player, activeSortKey }
   );
 }
 
 function renderPlayerActivityTable(player) {
-  const rows = player.activityRows.filter((row) => row.activity && row.activity !== "Overall");
+  const rows = player.activityRows.filter((row) => row.activity && row.activity !== "Overall" && (row.exp || 0) > 0);
   return components.table(
     [
       { label: "Activity", render: (row) => `<strong>${escapeHtml(row.activity)}</strong><span class="table-subline">${escapeHtml(row.category)}</span>` },
       { label: "XP", render: (row) => format(row.exp, 0) },
       { label: "Levels", render: (row) => format(row.levels, 0) },
-      { label: "Rank", render: (row) => format(row.rank, 0) },
       { label: "EHP", render: (row) => formatHours(row.ehp) }
     ],
     rows
@@ -880,12 +1017,12 @@ function renderPlayerPage() {
     <div class="detail-grid">
       ${components.panel({
         title: "Boss KC and EHB",
-        eyebrow: "all boss rows",
+        eyebrow: "positive boss rows",
         body: renderPlayerBossTable(player)
       })}
       ${components.panel({
         title: "Activity XP and EHP",
-        eyebrow: "skilling and combat",
+        eyebrow: "positive skill rows",
         body: renderPlayerActivityTable(player)
       })}
     </div>
@@ -936,6 +1073,13 @@ function bindDelegatedActions() {
     if (playersSortButton) {
       state.playersSortKey = playersSortButton.dataset.playersSort;
       renderPlayers();
+      return;
+    }
+
+    const playerBossSortButton = event.target.closest("[data-player-boss-sort]");
+    if (playerBossSortButton) {
+      state.playerBossSorts.set(playerBossSortButton.dataset.playerBossSort, playerBossSortButton.dataset.sortKey);
+      renderPlayerPage();
       return;
     }
 
@@ -1236,11 +1380,45 @@ function topTeamPlayer(players, primaryKey, secondaryKey) {
 }
 
 function normalizeEventResults(eventResults) {
+  const tileCategoryOverrides = {
+    "Pet": [],
+    "Big Fish": ["Fishing"],
+    "Rev Totem": [],
+    "1m Clue": [],
+    "DHW": [],
+    "Jar": [
+      "Kraken",
+      "Zulrah",
+      "Kalphite Queen",
+      "Cerberus",
+      "Abyssal Sire",
+      "Skotizo",
+      "Grotesque Guardians",
+      "Vorkath",
+      "Alchemical Hydra",
+      "Sarachnis",
+      "Nightmare",
+      "Corporeal Beast",
+      "Thermonuclear Smoke Devil",
+      "Araxxor"
+    ],
+    "Champ Scroll": [],
+    "BA Gambles": [],
+    "Tomes": ["Wintertodt", "Tempoross", "Huey"],
+    "Bottled Storm": ["Sailing"],
+    "Dragon Limbs": [],
+    "Cudgel": ["Sarachnis", "Kalphite Queen", "Thermonuclear Smoke Devil"]
+  };
+
   const players = eventResults.players.map((player) => ({
     ...player,
     badges: (player.badges || []).filter((badge) => badge !== "MVP" && badge !== "Grinder")
   }));
   const playersById = new Map(players.map((player) => [player.id, player]));
+  const tiles = eventResults.tiles.map((tile) => ({
+    ...tile,
+    relevantCategories: tileCategoryOverrides[tile.pointLabel] ?? (tile.relevantCategories || []).filter(isMappedCategory)
+  }));
 
   const teams = eventResults.teams
     .map((team) => ({
@@ -1267,6 +1445,7 @@ function normalizeEventResults(eventResults) {
   return {
     ...eventResults,
     players,
+    tiles,
     teams,
     summary: {
       ...eventResults.summary,
