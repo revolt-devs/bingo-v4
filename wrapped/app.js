@@ -1,8 +1,11 @@
 import * as components from "./components.js";
 import { detailFormat, escapeHtml, format, numberFormat, slugify } from "./utils.js";
 
+const appBaseUrl = new URL(".", import.meta.url);
+const appBasePath = appBaseUrl.pathname.replace(/\/$/, "");
+
 const paths = {
-  eventResults: "../data/wrapped/event-results.json"
+  eventResults: new URL("../data/wrapped/event-results.json", appBaseUrl).toString()
 };
 
 const viewRoutes = {
@@ -12,13 +15,6 @@ const viewRoutes = {
   bosses: "/bosses",
   data: "/source"
 };
-
-const appBasePath = (() => {
-  const path = window.location.pathname.replace(/\/index\.html$/, "");
-  const marker = "/wrapped";
-  const markerIndex = path.lastIndexOf(marker);
-  return markerIndex >= 0 ? path.slice(0, markerIndex + marker.length) : "";
-})();
 
 const hardcodedTeamTileScores = new Map([
   ["Team Backs", 49],
