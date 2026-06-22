@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Iron Revolt Bingo V4 - Wrapped</title>
+    <link rel="stylesheet" href="/wrapped/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <nav class="view-tabs" aria-label="Views">
+          <button class="tab is-active" type="button" data-view="overview">Overview</button>
+          <button class="tab" type="button" data-view="teams">Teams</button>
+          <button class="tab" type="button" data-view="board">Board</button>
+          <button class="tab" type="button" data-view="bosses">Bosses</button>
+          <button class="tab" type="button" data-view="data">Data</button>
+        </nav>
+      </header>
+
+      <main>
+        <section class="view is-active" id="overview-view" aria-labelledby="overview-title">
+          <div id="overview-content"></div>
+        </section>
+
+        <section class="view" id="teams-view" aria-labelledby="teams-title">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">Rosters and work</p>
+              <h2 id="teams-title">Teams</h2>
+            </div>
+          </div>
+          <div id="teams-content"></div>
+        </section>
+
+        <section class="view" id="player-page-view" aria-label="Player detail">
+          <div id="player-page"></div>
+        </section>
+
+        <section class="view" id="board-view" aria-labelledby="board-title">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">Tile receipts</p>
+              <h2 id="board-title">Board</h2>
+            </div>
+          </div>
+          <div class="tiles-layout">
+            <div class="board" id="tile-board" aria-label="Iron Revolt Bingo V4 board"></div>
+          </div>
+        </section>
+
+        <section class="view" id="tile-page-view" aria-label="Tile detail">
+          <div id="tile-page"></div>
+        </section>
+
+        <section class="view" id="bosses-view" aria-labelledby="bosses-title">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">KC and EHB index</p>
+              <h2 id="bosses-title">Bosses</h2>
+            </div>
+          </div>
+          <div id="bosses-content"></div>
+        </section>
+
+        <section class="view" id="boss-page-view" aria-label="Boss detail">
+          <div id="boss-page"></div>
+        </section>
+
+        <section class="view" id="data-view" aria-labelledby="data-title">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">Source</p>
+              <h2 id="data-title">Data</h2>
+            </div>
+          </div>
+          <article class="glass-panel data-source-panel">
+            <p>
+              Thanks to @yep im dry for compiling the bingo data linked
+              <a href="https://docs.google.com/spreadsheets/d/1VD5wGKxhlusBxQCUcKtXHOhb4hjnba7n8IAkv8ahu1g/edit?gid=1736930201#gid=1736930201" target="_blank" rel="noopener">here</a>.
+            </p>
+          </article>
+        </section>
+
+      </main>
+      <nav class="bottom-nav" aria-label="Mobile views">
+        <button class="tab is-active" type="button" data-view="overview">Overview</button>
+        <button class="tab" type="button" data-view="teams">Teams</button>
+        <button class="tab" type="button" data-view="board">Board</button>
+        <button class="tab" type="button" data-view="bosses">Bosses</button>
+        <button class="tab" type="button" data-view="data">Data</button>
+      </nav>
+    </div>
+
+    <script type="module" src="/wrapped/app.js"></script>
+  </body>
+</html>

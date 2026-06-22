@@ -1,0 +1,47 @@
+# Publish allowlist
+#
+# Keep the public GitHub Pages surface small. Everything is ignored by default,
+# then only the static app and its current generated browser payload are exposed.
+/*
+
+# Repository files
+!.gitignore
+!README.md
+!.nojekyll
+
+# GitHub Pages app
+!/wrapped/
+!/wrapped/**
+
+# Public generated data used by wrapped/app.js
+!/data/
+/data/*
+!/data/wrapped/
+/data/wrapped/*
+!/data/wrapped/event-results.json
+
+# Local/runtime noise
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Dependency and build caches, in case this workspace grows later.
+node_modules/
+dist/
+build/
+.cache/
+.parcel-cache/
+.vite/
+coverage/
+__pycache__/
+*.py[cod]
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
