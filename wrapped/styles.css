@@ -998,48 +998,114 @@ tbody tr:hover {
   font-weight: 800;
 }
 
-.award-placeholder-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-  padding: 14px;
-}
-
 .action-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
 }
 
-.award-placeholder {
+.award-grid {
   display: grid;
+  grid-template-columns: 1fr;
   gap: 10px;
-  min-height: 112px;
+}
+
+.award-card {
+  display: grid;
+  gap: 14px;
+  min-height: 250px;
   align-content: space-between;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(246, 199, 90, 0.36);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(246, 199, 90, 0.18), rgba(30, 230, 214, 0.09)),
+    rgba(255, 255, 255, 0.055);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.award-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), var(--cyan), var(--pink));
+}
+
+.award-card-top,
+.award-winner {
+  position: relative;
+  z-index: 1;
+}
+
+.award-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--secondary);
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.award-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  font-size: 1.4rem;
+}
+
+.award-card h3 {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.08;
+}
+
+.award-card p {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.award-winner {
+  display: grid;
+  gap: 3px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  padding: 14px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 12px;
 }
 
-.award-placeholder strong {
-  font-size: 1rem;
+.award-winner span,
+.award-winner small {
+  color: var(--secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
-.award-coming-soon {
-  display: grid;
-  gap: 8px;
-  padding: 24px 16px;
+.award-winner strong,
+.award-winner a {
+  color: var(--text);
+  font-size: 1.2rem;
+  line-height: 1.1;
+  text-decoration: none;
 }
 
-.award-coming-soon strong {
-  font-size: 1.15rem;
-}
-
-.award-coming-soon span {
-  max-width: 52ch;
-  color: var(--muted);
-  font-size: 0.9rem;
+.award-winner a:hover {
+  color: var(--cyan);
 }
 
 .nav-card {
@@ -1516,8 +1582,8 @@ tbody tr:hover {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .award-placeholder-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .award-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .action-grid {

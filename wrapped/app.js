@@ -137,17 +137,47 @@ function renderScoreCard(team) {
   `;
 }
 
-function renderAwardsPlaceholder() {
-  return components.panel({
-    title: "Awards",
-    eyebrow: "coming soon",
-    body: `
-      <div class="award-coming-soon">
-        <strong>Coming soon</strong>
-        <span>Awards are being finalized and will land here once the receipts are ready.</span>
+function renderAwardCard(award) {
+  const winner = award.winnerPlayerId ? playerById(award.winnerPlayerId) : null;
+  const winnerName = award.winner || winner?.displayName || "Unknown";
+  const winnerMarkup = winner
+    ? `<a href="${playerPath(winner.id)}">${escapeHtml(winnerName)}</a>`
+    : escapeHtml(winnerName);
+
+  return `
+    <article class="award-card">
+      <div class="award-card-top">
+        <span class="award-icon" aria-hidden="true">${escapeHtml(award.icon || "*")}</span>
+        <span>${escapeHtml(award.criteria || "award")}</span>
       </div>
-    `
-  });
+      <h3>${escapeHtml(award.label)}</h3>
+      <p>${escapeHtml(award.description)}</p>
+      <div class="award-winner">
+        <span>Winner</span>
+        <strong>${winnerMarkup}</strong>
+        <small>${escapeHtml(award.value || "")}</small>
+      </div>
+    </article>
+  `;
+}
+
+function renderAwards() {
+  const awards = state.data.awards || [];
+  if (!awards.length) return "";
+
+  return `
+    <section>
+      <div class="section-header">
+        <div>
+          <p class="eyebrow">Community awards</p>
+          <h2>Special Honors</h2>
+        </div>
+      </div>
+      <div class="award-grid">
+        ${awards.map(renderAwardCard).join("")}
+      </div>
+    </section>
+  `;
 }
 
 function renderOverview() {
@@ -164,7 +194,7 @@ function renderOverview() {
           ${state.data.teams.map(renderScoreCard).join("")}
         </div>
       </section>
-      ${renderAwardsPlaceholder()}
+      ${renderAwards()}
       <div class="action-grid">
         <a class="nav-card" href="${routeForView("board")}" data-view-jump="board">
           <span class="eyebrow">Explore</span>
