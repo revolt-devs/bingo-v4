@@ -13,6 +13,13 @@ const viewRoutes = {
   data: "/source"
 };
 
+const appBasePath = (() => {
+  const path = window.location.pathname.replace(/\/index\.html$/, "");
+  const marker = "/wrapped";
+  const markerIndex = path.lastIndexOf(marker);
+  return markerIndex >= 0 ? path.slice(0, markerIndex + marker.length) : "";
+})();
+
 const hardcodedTeamTileScores = new Map([
   ["Team Backs", 49],
   ["Team Bill", 48],
@@ -45,6 +52,12 @@ function qsa(selector, root = document) {
   return [...root.querySelectorAll(selector)];
 }
 
+function withBasePath(route) {
+  const normalized = route.startsWith("/") ? route : `/${route}`;
+  if (normalized === "/") return appBasePath ? `${appBasePath}/` : "/";
+  return `${appBasePath}${normalized}`;
+}
+
 function teamById(teamId) {
   return state.data.teamsById.get(teamId);
 }
@@ -75,7 +88,7 @@ function teamBadge(row) {
 }
 
 function playerPath(playerId) {
-  return `/players/${playerId}`;
+  return withBasePath(`/players/${playerId}`);
 }
 
 function tileSlug(tile) {
@@ -83,7 +96,7 @@ function tileSlug(tile) {
 }
 
 function tilePath(tileId) {
-  return `/board/${tileSlug(tileById(tileId))}`;
+  return withBasePath(`/board/${tileSlug(tileById(tileId))}`);
 }
 
 function tileIdForSlug(slug) {
@@ -91,7 +104,7 @@ function tileIdForSlug(slug) {
 }
 
 function bossPath(bossSlug) {
-  return `/bosses/${bossSlug}`;
+  return withBasePath(`/bosses/${bossSlug}`);
 }
 
 function medalClass(rank) {
@@ -154,15 +167,15 @@ function renderOverview() {
       </section>
       ${renderAwardsPlaceholder()}
       <div class="action-grid">
-        <a class="nav-card" href="${viewRoutes.board}" data-view-jump="board">
+        <a class="nav-card" href="${routeForView("board")}" data-view-jump="board">
           <span class="eyebrow">Explore</span>
           <strong>Board</strong>
         </a>
-        <a class="nav-card" href="${viewRoutes.teams}" data-view-jump="teams">
+        <a class="nav-card" href="${routeForView("teams")}" data-view-jump="teams">
           <span class="eyebrow">Explore</span>
           <strong>Teams</strong>
         </a>
-        <a class="nav-card" href="${viewRoutes.bosses}" data-view-jump="bosses">
+        <a class="nav-card" href="${routeForView("bosses")}" data-view-jump="bosses">
           <span class="eyebrow">Explore</span>
           <strong>Bosses</strong>
         </a>
@@ -796,13 +809,16 @@ function bindDelegatedActions() {
 }
 
 function normalizePath() {
-  const withoutAppPrefix = window.location.pathname.replace(/^\/wrapped(?=\/|$)/, "");
-  const path = withoutAppPrefix.replace(/\/index\.html$/, "") || "/";
+  const currentPath = window.location.pathname.replace(/\/index\.html$/, "");
+  const path =
+    appBasePath && currentPath.startsWith(appBasePath)
+      ? currentPath.slice(appBasePath.length) || "/"
+      : currentPath.replace(/^\/wrapped(?=\/|$)/, "") || "/";
   return path.length > 1 ? path.replace(/\/$/, "") : path;
 }
 
 function routeForView(viewName) {
-  return viewRoutes[viewName] || "/";
+  return withBasePath(viewRoutes[viewName] || "/");
 }
 
 function routeToState() {
