@@ -449,7 +449,7 @@ function renderPlayers() {
 }
 
 function tileTeamCompletionProgress(tile) {
-  const completedTeams = (tile.teamScores || []).filter((row) => (row.score || 0) >= 1).length;
+  const completedTeams = (tile.teamScores || []).filter((row) => (row.score || 0) >= 0.9).length;
   return `${Math.min(completedTeams, 4)}/4`;
 }
 
