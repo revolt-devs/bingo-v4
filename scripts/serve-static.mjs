@@ -27,7 +27,7 @@ function send(response, statusCode, body, contentType = "text/plain; charset=utf
 
 function resolveRequestPath(urlPath) {
   const decoded = decodeURIComponent(urlPath.split("?")[0]);
-  const relativePath = decoded === "/" ? "wrapped/index.html" : decoded.replace(/^\/+/, "");
+  const relativePath = decoded === "/" ? "index.html" : decoded.replace(/^\/+/, "");
   const candidate = resolve(root, normalize(relativePath));
 
   if (candidate !== root && !candidate.startsWith(root + sep)) {
@@ -44,6 +44,12 @@ function resolveRequestPath(urlPath) {
 }
 
 const server = createServer((request, response) => {
+  if ((request.url || "/").split("?")[0] === "/") {
+    response.writeHead(302, { Location: "/wrapped/" });
+    response.end();
+    return;
+  }
+
   const filePath = resolveRequestPath(request.url || "/");
   if (!filePath) {
     send(response, 403, "Forbidden");
