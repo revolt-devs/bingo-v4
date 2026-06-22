@@ -4,8 +4,20 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Iron Revolt Bingo V4 - Wrapped</title>
-    <base href="/wrapped/" />
-    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      (function () {
+        var marker = "/wrapped";
+        var path = window.location.pathname;
+        var markerIndex = path.indexOf(marker);
+        var assetBase =
+          markerIndex === -1
+            ? new URL("./", window.location.href).pathname
+            : path.slice(0, markerIndex + marker.length) + "/";
+
+        window.__WRAPPED_ASSET_BASE__ = assetBase;
+        document.write('<link rel="stylesheet" href="' + assetBase.replace(/"/g, "%22") + 'styles.css">');
+      })();
+    </script>
   </head>
   <body>
     <div class="app-shell">
@@ -106,7 +118,9 @@
       </nav>
     </div>
 
-    <script type="module" src="./app.js"></script>
+    <script type="module">
+      import(window.__WRAPPED_ASSET_BASE__ + "app.js");
+    </script>
     <script>
       (function () {
         var params = new URLSearchParams(window.location.search);
